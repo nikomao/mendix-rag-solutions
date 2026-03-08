@@ -12,6 +12,14 @@
 - `/`：客户演示主站，按 `docs/index.md` 的原始结构渲染，并融合了架构流程、价值与优势、FAQ、Mendix GenAI 官方能力等模块
 - `/console`：交互式演示控制台
 
+## 封面图
+
+仓库封面素材：
+
+- `assets/social-preview.svg`
+
+如果你要给 GitHub 仓库、文档首页或提案封面配图，可以直接使用这张 SVG。
+
 ## 技术栈
 
 - Next.js 16.1.6
@@ -89,6 +97,10 @@ Windows 下也可以直接使用：
 详细说明见：
 
 - [README-docker.md](C:/Users/Niko.Mao/CodesR/Mendix-RAG/README-docker.md)
+
+极简启动说明见：
+
+- [README-quickstart.md](C:/Users/Niko.Mao/CodesR/Mendix-RAG/README-quickstart.md)
 
 ## 构建
 
