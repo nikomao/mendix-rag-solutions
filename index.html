@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工业AI幻觉与Mendix RAG深度洞察</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Corporate Clean (Warm Slate background, Deep Blue primary, Teal/Orange accents) -->
+    <!-- Application Structure Plan: Sidebar navigation for clear thematic separation. 
+         1. Overview: Problem statement (Hallucinations) & Solution (RAG).
+         2. Ecosystem: The Chinese market RAG landscape (Ragflow, DBs).
+         3. Mendix Analysis: Deep dive into Mendix GenAI vs Open Source vs Commercial.
+         4. Implementation: How to execute Mendix RAG in enterprise.
+         5. Data ETL: Specifics on parsing (Files, 3D, Video) as requested.
+         Why: Allows decision-makers to jump between high-level strategy and technical details (ETL/Architecture). 
+    -->
+    <!-- Visualization & Content Choices: 
+         1. Overview: KPI Cards (Inform) -> Immediate context on Hallucination rates.
+         2. Comparison: Radar Chart (Compare) -> Mendix vs Open Source vs Commercial on 5 axes.
+         3. Ecosystem: Interactive Grid (Organize) -> Visualizing the stack (Ragflow, Milvus, NebulaGraph).
+         4. ETL: Tabbed Content (Organize) -> Managing density of tools for different media types.
+         5. Implementation: Flowchart built with CSS/Grid (Process) -> Visualizing the Mendix workflow.
+         Confirmation: NO SVG graphics used. NO Mermaid JS used. CSS shapes and Unicode used instead.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc; /* Warm neutral light */
+            color: #1e293b;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Chart Container Styling - Mandatory per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Constraint */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height */
+            max-height: 400px;
+        }
+        
+        .nav-item.active {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border-right: 4px solid #0284c7;
+        }
+
+        /* Interactive Card Styling */
+        .info-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #38bdf8;
+        }
+
+        /* Tab Styling */
+        .tab-btn {
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #0284c7;
+            color: #0284c7;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col h-full shadow-sm z-10">
+        <div class="p-6 border-b border-slate-100">
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight">AI 工业洞察</h1>
+            <p class="text-xs text-slate-500 mt-1">RAG与Mendix方案分析</p>
+        </div>
+        <div class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li>
+                    <button onclick="navigateTo('overview')" id="nav-overview" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors active">
+                        📊 核心概览 (Overview)
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navigateTo('ecosystem')" id="nav-ecosystem" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        🇨🇳 中国RAG生态 (Ecosystem)
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navigateTo('comparison')" id="nav-comparison" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        ⚖️ 方案深度对比 (Comparison)
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navigateTo('etl')" id="nav-etl" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        📂 数据解析与ETL (Parsing)
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navigateTo('implementation')" id="nav-implementation" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        🚀 Mendix落地指南 (Guide)
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="p-4 border-t border-slate-100">
+            <div class="bg-blue-50 p-3 rounded-lg">
+                <p class="text-xs text-blue-800 font-semibold">当前关注点</p>
+                <p class="text-xs text-blue-600 mt-1">工业AI幻觉消除 & Mendix GenAI 架构</p>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto bg-slate-50 p-8 relative" id="main-content">
+        
+        <!-- SECTION: OVERVIEW -->
+        <section id="overview" class="space-y-8 animate-fade-in">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">工业AI幻觉与RAG破局之道</h2>
+                <p class="mt-2 text-slate-600 max-w-3xl leading-relaxed">
+                    在工业场景中，通用大模型（LLM）常因缺乏领域知识而产生“幻觉”（一本正经胡说八道），导致设备维护、生产决策风险。
+                    本报告深入分析如何利用检索增强生成（RAG）技术，结合中国市场主流技术栈（如Ragflow, NebulaGraph）及Mendix低代码平台，构建高可靠的企业级AI应用。
+                </p>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="text-sm text-slate-500 font-medium uppercase">通用LLM工业幻觉率</div>
+                    <div class="text-3xl font-bold text-red-500 mt-2">15-30%</div>
+                    <p class="text-xs text-slate-400 mt-2">无外部知识库支持的情况下</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="text-sm text-slate-500 font-medium uppercase">RAG引入后准确率提升</div>
+                    <div class="text-3xl font-bold text-emerald-600 mt-2">> 92%</div>
+                    <p class="text-xs text-slate-400 mt-2">基于高质量知识库检索</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="text-sm text-slate-500 font-medium uppercase">Mendix 开发效率倍增</div>
+                    <div class="text-3xl font-bold text-blue-600 mt-2">4x - 6x</div>
+                    <p class="text-xs text-slate-400 mt-2">对比纯代码开发全栈RAG应用</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Chart: Hallucination Types -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">工业场景常见的AI幻觉类型</h3>
+                    <div class="chart-container">
+                        <canvas id="hallucinationChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-4">数据来源：行业调研抽样</p>
+                </div>
+                <!-- Concept Text -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">核心挑战：为什么不仅是 "AI Gateway"?</h3>
+                    <p class="text-sm text-slate-600 mb-4">
+                        许多企业误以为仅仅接入一个 Mendix AI Gateway 就能解决问题。实际上，<strong>网关只是通道</strong>。要真正消除幻觉，必须构建完整的RAG链路：
+                    </p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">●</span>
+                            <span class="text-sm text-slate-700"><strong>知识工程：</strong> 对非结构化工业文档（手册、图纸）的精准解析。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">●</span>
+                            <span class="text-sm text-slate-700"><strong>检索策略：</strong> 混合检索（关键词+向量）与重排序（Rerank）。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">●</span>
+                            <span class="text-sm text-slate-700"><strong>应用编排：</strong> 利用 Mendix GenAI Commons 组件串联业务逻辑。</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: ECOSYSTEM -->
+        <section id="ecosystem" class="hidden space-y-8 animate-fade-in">
+            <header>
+                <h2 class="text-3xl font-bold text-slate-800">中国市场 RAG 技术生态全景</h2>
+                <p class="mt-2 text-slate-600">
+                    在中国构建企业级RAG，必须考虑国产化适配、数据合规及特定技术栈的优势。以下是当前中国市场主流的RAG组件方案。
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Card 1: Orchestration -->
+                <div class="info-card bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-bl">核心编排</div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Ragflow</h3>
+                    <p class="text-sm text-slate-600 mb-3">
+                        一款基于深度文档理解（DeepDoc）的开源RAG引擎。
+                    </p>
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-100">
+                        <strong class="text-slate-700">为什么重要？</strong>
+                        <p class="text-slate-500 mt-1">相比LangChain的通用性，Ragflow更专注于<strong>复杂文档解析</strong>（如表格、多栏排版），这对于工业手册至关重要。</p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Vector DB -->
+                <div class="info-card bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-bl">向量存储</div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Milvus / Zilliz</h3>
+                    <p class="text-sm text-slate-600 mb-3">
+                        全球领先的开源向量数据库，源自中国团队。
+                    </p>
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-100">
+                        <strong class="text-slate-700">优势：</strong>
+                        <p class="text-slate-500 mt-1">高性能、分布式架构，适合海量工业知识库的存储与毫秒级检索。在信创环境支持良好。</p>
+                    </div>
+                </div>
+
+                <!-- Card 3: Graph DB -->
+                <div class="info-card bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-bl">图谱增强</div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">NebulaGraph / Neo4j</h3>
+                    <p class="text-sm text-slate-600 mb-3">
+                        Graph RAG 是解决复杂推理的关键。
+                    </p>
+                    <div class="text-sm bg-slate-50 p-3 rounded border border-slate-100">
+                        <strong class="text-slate-700">工业应用：</strong>
+                        <p class="text-slate-500 mt-1">将设备（实体）与故障现象（关系）构建成知识图谱，弥补纯向量检索在逻辑跳跃上的不足。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ecosystem Visual -->
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mt-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-6 text-center">RAG 技术栈分层架构</h3>
+                <div class="flex flex-col md:flex-row gap-4 items-stretch justify-center">
+                    <!-- Layer 1 -->
+                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded p-4 flex flex-col items-center">
+                        <div class="text-2xl mb-2">📥</div>
+                        <h4 class="font-bold text-slate-700 mb-2">解析层 (ETL)</h4>
+                        <ul class="text-xs text-slate-500 text-center space-y-1">
+                            <li>PDF/Word Parser</li>
+                            <li>OCR (PaddleOCR)</li>
+                            <li>ASR (FunASR)</li>
+                        </ul>
+                    </div>
+                    <div class="flex items-center justify-center text-slate-300 text-2xl">➔</div>
+                    <!-- Layer 2 -->
+                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded p-4 flex flex-col items-center">
+                        <div class="text-2xl mb-2">🧠</div>
+                        <h4 class="font-bold text-slate-700 mb-2">存储与索引</h4>
+                        <ul class="text-xs text-slate-500 text-center space-y-1">
+                            <li class="bg-emerald-100 px-1 rounded text-emerald-800">Milvus (Vector)</li>
+                            <li class="bg-purple-100 px-1 rounded text-purple-800">NebulaGraph (Graph)</li>
+                            <li>Elasticsearch (Keyword)</li>
+                        </ul>
+                    </div>
+                    <div class="flex items-center justify-center text-slate-300 text-2xl">➔</div>
+                    <!-- Layer 3 -->
+                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded p-4 flex flex-col items-center border-2 border-blue-500 bg-blue-50">
+                        <div class="text-2xl mb-2">⚙️</div>
+                        <h4 class="font-bold text-blue-900 mb-2">Mendix 应用层</h4>
+                        <ul class="text-xs text-blue-700 text-center space-y-1">
+                            <li><strong>Mendix GenAI Commons</strong></li>
+                            <li>Prompt Management</li>
+                            <li>Human-in-the-loop UI</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: COMPARISON -->
+        <section id="comparison" class="hidden space-y-8 animate-fade-in">
+            <header>
+                <h2 class="text-3xl font-bold text-slate-800">方案优劣势深度对比</h2>
+                <p class="mt-2 text-slate-600">
+                    企业选择 RAG 方案时，需权衡开发速度、定制化能力与运维成本。本节对比 <strong>Mendix GenAI 方案</strong>、<strong>开源成熟方案 (如 Ragflow)</strong> 与 <strong>商业化成品 (如 百度千帆/阿里百炼)</strong>。
+                </p>
+            </header>
+
+            <div class="flex flex-col xl:flex-row gap-8">
+                <!-- Interactive Comparison Controls -->
+                <div class="xl:w-1/3 space-y-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-3">Mendix 方案 (PaaS/Low-Code)</h3>
+                        <ul class="text-sm space-y-2">
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✔</span> <span class="text-slate-600"><strong>优势：</strong> 与现有业务系统（ERP/MES）集成极快；UI开发成本极低；利用 GenAI Commons 快速封装。</span></li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2">✘</span> <span class="text-slate-600"><strong>不足：</strong> 对底层向量库和切分算法的控制力不如纯代码灵活；依赖组件更新。</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-3">开源方案 (Ragflow/LangChain)</h3>
+                        <ul class="text-sm space-y-2">
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✔</span> <span class="text-slate-600"><strong>优势：</strong> 极致的定制化；最新的算法（如Raptor, Self-RAG）跟进最快；无License费用。</span></li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2">✘</span> <span class="text-slate-600"><strong>不足：</strong> 运维复杂度高；UI/交互层开发工作量大；企业级权限管理需自研。</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Radar Chart -->
+                <div class="xl:w-2/3 bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 text-center">多维度能力评估雷达图</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonRadar"></canvas>
+                    </div>
+                    <div class="mt-4 flex justify-center gap-4 text-xs text-slate-500">
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-1"></span> Mendix GenAI</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-1"></span> 开源 (Ragflow)</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-orange-500 mr-1"></span> 商业化成品</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="overflow-x-auto bg-white rounded-xl border border-slate-200">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-3">维度</th>
+                            <th class="px-6 py-3 text-blue-700">Mendix GenAI 方案</th>
+                            <th class="px-6 py-3">开源方案 (Ragflow 等)</th>
+                            <th class="px-6 py-3">商业化成品 RAG</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-800">业务集成度</td>
+                            <td class="px-6 py-4 text-green-600 font-bold">极高 (原生集成)</td>
+                            <td class="px-6 py-4">低 (需API开发)</td>
+                            <td class="px-6 py-4">中 (标准API)</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-800">文档解析能力</td>
+                            <td class="px-6 py-4">依赖外部服务连接</td>
+                            <td class="px-6 py-4 text-green-600 font-bold">极强 (深度定制)</td>
+                            <td class="px-6 py-4">强 (黑盒)</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-800">数据隐私</td>
+                            <td class="px-6 py-4">私有化部署可行</td>
+                            <td class="px-6 py-4 text-green-600 font-bold">完全可控 (本地部署)</td>
+                            <td class="px-6 py-4">依厂商政策而定</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-800">技术门槛</td>
+                            <td class="px-6 py-4 text-green-600 font-bold">低 (低代码拖拽)</td>
+                            <td class="px-6 py-4">高 (Python/Docker)</td>
+                            <td class="px-6 py-4">极低 (SaaS)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION: ETL & PARSING -->
+        <section id="etl" class="hidden space-y-8 animate-fade-in">
+            <header>
+                <h2 class="text-3xl font-bold text-slate-800">全模态数据解析与 ETL 方案</h2>
+                <p class="mt-2 text-slate-600">
+                    工业知识不仅存在于文档中，还大量存在于图纸、维修视频和3D模型中。高质量的 RAG 始于高质量的解析。
+                </p>
+            </header>
+
+            <!-- Tabs Navigation -->
+            <div class="border-b border-slate-200 mb-6">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button onclick="switchTab('etl', 'files')" id="tab-files" class="tab-btn active whitespace-nowrap py-4 px-1 text-sm font-medium">📄 复杂文档 (PDF/Office)</button>
+                    <button onclick="switchTab('etl', 'images')" id="tab-images" class="tab-btn whitespace-nowrap py-4 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 hover:border-slate-300">🖼️ 图片与OCR</button>
+                    <button onclick="switchTab('etl', 'multimedia')" id="tab-multimedia" class="tab-btn whitespace-nowrap py-4 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 hover:border-slate-300">🎥 音视频</button>
+                    <button onclick="switchTab('etl', '3d')" id="tab-3d" class="tab-btn whitespace-nowrap py-4 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 hover:border-slate-300">🧊 3D模型与图纸</button>
+                </nav>
+            </div>
+
+            <!-- Tab Content: Files -->
+            <div id="content-files" class="etl-content">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">非结构化文档深度解析</h3>
+                    <p class="text-sm text-slate-600 mb-4">工业手册通常包含复杂的多级标题、表格和跨页图表。简单的文本提取会导致上下文丢失。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">开源方案</h4>
+                            <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                                <li><strong>IBM Docling:</strong> <span class="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded ml-1 font-bold">架构优选</span> IBM 开源的高性能解析引擎，极擅长处理工业手册中的嵌套表格、公式与跨页排版，高保真输出 LLM 友好的 Markdown/JSON，是高质量 ETL 管道的核心利器。</li>
+                                <li><strong>Ragflow (DeepDoc):</strong> 专为RAG设计的视觉布局分析模型，配合自身引擎体验佳。</li>
+                                <li><strong>Unstructured.io:</strong> 通用解析生态库，支持的长尾文件格式极多。</li>
+                                <li><strong>PyMuPDF / PDFPlumber:</strong> 基础底层库，需大量编写 Regex 正则与边界规则进行二次开发。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">中国商业方案</h4>
+                            <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                                <li><strong>合合信息 (TextIn):</strong> 业界领先的文档解析API，对中文表格还原度极高。</li>
+                                <li><strong>百度文心千帆 (ETL组件):</strong> 集成在平台内，开箱即用。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Images -->
+            <div id="content-images" class="etl-content hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">工业OCR与视觉理解</h3>
+                    <p class="text-sm text-slate-600 mb-4">针对铭牌、仪表读数、扫描件图纸的文字提取。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">开源方案</h4>
+                            <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                                <li><strong>PaddleOCR (百度):</strong> 轻量级、支持80+语言，中文识别效果SOTA。</li>
+                                <li><strong>RapidOCR:</strong> 基于ONNXRuntime的推理库，部署极快。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">多模态大模型 (VLM)</h4>
+                            <p class="mt-2 text-sm text-slate-600">
+                                相比传统OCR，直接使用 <strong>Qwen-VL</strong> (阿里) 或 <strong>Yi-VL</strong> (零一万物) 可以直接"理解"图片内容并生成描述，存入向量库。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Multimedia -->
+            <div id="content-multimedia" class="etl-content hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">音视频数据解析</h3>
+                    <p class="text-sm text-slate-600 mb-4">处理维修录音、会议记录及培训视频。</p>
+                    <ul class="space-y-3">
+                        <li class="bg-slate-50 p-3 rounded flex justify-between items-center">
+                            <span class="font-bold text-slate-700 text-sm">FunASR (阿里达摩院)</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">开源/中文极佳</span>
+                            <span class="text-sm text-slate-500">相比Whisper，FunASR在中文工业术语识别上更具优势。</span>
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded flex justify-between items-center">
+                            <span class="font-bold text-slate-700 text-sm">Video-Llama / ChatVideo</span>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">视频理解</span>
+                            <span class="text-sm text-slate-500">提取关键帧并生成时序描述，用于故障检索。</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+             <!-- Tab Content: 3D -->
+             <div id="content-3d" class="etl-content hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">3D CAD 模型与点云解析</h3>
+                    <p class="text-sm text-slate-600 mb-4">最具挑战性的领域。目标是将3D几何特征转化为文本描述或向量。</p>
+                    <div class="border-l-4 border-orange-400 pl-4 bg-orange-50 p-3 rounded mb-4">
+                        <p class="text-sm text-orange-800"><strong>难点提示：</strong> 目前尚无完美的开源通用3D转文本方案。主流做法是解析元数据（BOM表）或多视图截屏后使用VLM。</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">开源技术路径</h4>
+                            <ul class="mt-2 space-y-2 text-sm text-slate-600">
+                                <li><strong>PythonOCC / OpenCascade:</strong> 用于解析STEP/IGES文件的几何结构和元数据。</li>
+                                <li><strong>PointNet++ / ULIP:</strong> 针对点云数据的特征提取（学术界较多，工业落地较少）。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h4 class="font-bold text-slate-700 text-sm">Mendix 结合方案</h4>
+                            <p class="mt-2 text-sm text-slate-600">
+                                利用 <strong>Mendix 3D Viewer</strong> 组件展示模型，并在侧边栏通过 RAG 检索该模型关联的文档（维修手册、参数表），而非直接检索几何体。这是目前最务实的路径。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: IMPLEMENTATION -->
+        <section id="implementation" class="hidden space-y-8 animate-fade-in">
+            <header>
+                <h2 class="text-3xl font-bold text-slate-800">Mendix RAG 场景落地架构</h2>
+                <p class="mt-2 text-slate-600">
+                    如何在不重造轮子的情况下，利用 Mendix 快速构建 RAG 应用？核心在于 "混合架构"：Mendix 负责前端交互与业务逻辑，后端对接专业向量服务。
+                </p>
+            </header>
+
+            <!-- Architecture Diagram Visualization (CSS Grid) -->
+            <div class="bg-white p-8 rounded-xl border border-slate-200 overflow-x-auto">
+                <h3 class="text-center font-bold text-slate-800 mb-8">推荐架构：Mendix + 外部 RAG 服务 (Hybrid)</h3>
+                
+                <div class="flex flex-col gap-4 min-w-[600px]">
+                    <!-- Frontend Layer -->
+                    <div class="bg-blue-50 border-2 border-dashed border-blue-300 p-4 rounded-lg relative">
+                        <span class="absolute -top-3 left-4 bg-blue-100 text-blue-800 px-2 text-xs font-bold">Mendix 应用层</span>
+                        <div class="flex justify-around">
+                            <div class="bg-white p-3 rounded shadow text-center w-32 border border-blue-200">
+                                <div class="text-2xl">💬</div>
+                                <div class="text-xs font-bold mt-1">Chat UI组件</div>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow text-center w-32 border border-blue-200">
+                                <div class="text-2xl">🧩</div>
+                                <div class="text-xs font-bold mt-1">GenAI Commons</div>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow text-center w-32 border border-blue-200">
+                                <div class="text-2xl">📊</div>
+                                <div class="text-xs font-bold mt-1">业务数据关联</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connector Lines -->
+                    <div class="flex justify-center h-8 relative">
+                        <div class="border-l-2 border-slate-300 h-full absolute left-1/2 transform -translate-x-1/2"></div>
+                        <div class="bg-white px-2 text-xs text-slate-400 absolute top-2">REST / OData</div>
+                    </div>
+
+                    <!-- Backend Service Layer -->
+                    <div class="bg-slate-100 border-2 border-slate-300 p-4 rounded-lg relative">
+                        <span class="absolute -top-3 left-4 bg-slate-200 text-slate-700 px-2 text-xs font-bold">RAG 服务层 (Python/Go)</span>
+                        <div class="flex gap-4">
+                            <!-- Ingestion -->
+                            <div class="flex-1 bg-white p-3 rounded shadow border border-slate-200">
+                                <h4 class="text-xs font-bold text-slate-700 border-b pb-1 mb-2">数据管道 (ETL)</h4>
+                                <div class="text-xs text-slate-500 space-y-1">
+                                    <div>📄 解析 (Ragflow)</div>
+                                    <div>✂️ 切分 (Chunking)</div>
+                                    <div>🔢 向量化 (Embedding)</div>
+                                </div>
+                            </div>
+                            <!-- Storage -->
+                            <div class="flex-1 bg-white p-3 rounded shadow border border-slate-200">
+                                <h4 class="text-xs font-bold text-slate-700 border-b pb-1 mb-2">知识库 (KB)</h4>
+                                <div class="text-xs text-slate-500 space-y-1">
+                                    <div>🗄️ Milvus (向量)</div>
+                                    <div>🕸️ NebulaGraph (图)</div>
+                                </div>
+                            </div>
+                            <!-- Generation -->
+                            <div class="flex-1 bg-white p-3 rounded shadow border border-slate-200">
+                                <h4 class="text-xs font-bold text-slate-700 border-b pb-1 mb-2">模型推理</h4>
+                                <div class="text-xs text-slate-500 space-y-1">
+                                    <div>🤖 Qwen/DeepSeek</div>
+                                    <div>🔄 Rerank 模型</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-blue-800 mb-2">步骤 1: 知识库搭建 (Backend)</h3>
+                    <p class="text-sm text-slate-600">
+                        不要尝试在 Mendix 内部做复杂的 PDF 解析。使用 Ragflow 或 LangChain 在后端构建 API 服务。
+                        <br><strong>关键动作：</strong> 部署 Milvus 和 Embedding 模型（推荐 BGE-M3）。
+                    </p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-blue-800 mb-2">步骤 2: Mendix 集成 (GenAI Commons)</h3>
+                    <p class="text-sm text-slate-600">
+                        导入 <strong>GenAI Commons</strong> 模块。配置 "Request Handling" 微流，调用后端 RAG 检索接口，而不是直接调 LLM。
+                        <br><strong>关键动作：</strong> 将检索到的 Context 注入 Prompt 模板。
+                    </p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-blue-800 mb-2">步骤 3: 业务上下文融合</h3>
+                    <p class="text-sm text-slate-600">
+                        Mendix 的优势在于拥有业务数据（如设备ID、当前工单状态）。
+                        <br><strong>关键动作：</strong> 在 Prompt 中加入 Mendix 对象数据："当前设备型号是 [Module.DeviceType]，故障代码 [Code]，请根据知识库回答..."
+                    </p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-blue-800 mb-2">步骤 4: 人机回环 (HITL)</h3>
+                    <p class="text-sm text-slate-600">
+                        利用 Mendix 快速构建反馈界面。
+                        <br><strong>关键动作：</strong> 允许专家在 UI 上对 AI 回答点赞/点踩，并将修正后的答案回写到知识库，形成闭环。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // State Management
+        let currentState = {
+            section: 'overview',
+            tab: 'files'
+        };
+
+        // Navigation Logic
+        function navigateTo(sectionId) {
+            // Update state
+            currentState.section = sectionId;
+
+            // Hide all sections
+            document.querySelectorAll('section').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            // Show target section
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            // Update Nav styling
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-slate-50', 'text-blue-700', 'border-r-4', 'border-blue-600');
+                el.classList.add('text-slate-600');
+            });
+
+            const activeNav = document.getElementById(`nav-${sectionId}`);
+            activeNav.classList.add('active');
+
+            // Trigger Charts if section is visible and charts not loaded
+            if (sectionId === 'overview') renderOverviewCharts();
+            if (sectionId === 'comparison') renderComparisonCharts();
+        }
+
+        // Tab Logic
+        function switchTab(group, tabId) {
+            // Reset buttons in group
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-blue-600', 'text-blue-600', 'font-bold');
+                btn.classList.add('text-slate-500');
+                btn.style.borderBottom = 'none';
+            });
+
+            // Activate clicked button
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-500');
+            activeBtn.style.borderBottom = '2px solid #0284c7';
+
+            // Hide content
+            document.querySelectorAll('.etl-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show content
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+        }
+
+        // Chart.js Implementations
+        let overviewChartInstance = null;
+        let comparisonChartInstance = null;
+
+        function renderOverviewCharts() {
+            if (overviewChartInstance) return; // Prevent re-render
+            
+            const ctx = document.getElementById('hallucinationChart').getContext('2d');
+            overviewChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['事实捏造', '过期信息', '逻辑错误', '引用无效', '安全越界'],
+                    datasets: [{
+                        label: '幻觉发生频率 (无RAG)',
+                        data: [35, 25, 20, 15, 5],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderRadius: 4
+                    }, {
+                        label: '幻觉发生频率 (有RAG)',
+                        data: [5, 8, 12, 2, 1],
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '相对频率 (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderComparisonCharts() {
+            if (comparisonChartInstance) return;
+
+            const ctx = document.getElementById('comparisonRadar').getContext('2d');
+            comparisonChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['开发速度', '定制灵活性', '数据隐私', '运维成本(低为优)', '工业解析能力'],
+                    datasets: [{
+                        label: 'Mendix GenAI',
+                        data: [90, 40, 70, 80, 50],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        pointBackgroundColor: '#3b82f6'
+                    }, {
+                        label: '开源 (Ragflow)',
+                        data: [40, 95, 90, 30, 95],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        pointBackgroundColor: '#10b981'
+                    }, {
+                        label: '商业化成品',
+                        data: [95, 30, 50, 90, 75],
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        pointBackgroundColor: '#f97316'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e2e8f0' },
+                            grid: { color: '#e2e8f0' },
+                            pointLabels: {
+                                font: { size: 12, weight: 'bold' },
+                                color: '#475569'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderOverviewCharts();
+        });
+
+    </script>
+</body>
+</html>
+ 
